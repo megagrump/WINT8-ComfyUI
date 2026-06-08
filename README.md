@@ -1,5 +1,7 @@
 # WINT8 Nodes
 
+**This is a fork for my own personal use. Useless shit from the original has been removed**
+
 A self-contained suite for working with INT8 quantized diffusion models. No dependency on int88 or any other external custom node — all quantization logic is built in.
 
 ## WINT8 Diffuser Loader
