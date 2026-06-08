@@ -1,8 +1,7 @@
-<img width="687" height="687" alt="download (15)" src="https://github.com/user-attachments/assets/9bc42e70-14a7-4018-a27b-cb2c3fd11cdc" />
-
 WINT8 Nodes
 A self-contained suite for working with INT8 quantized diffusion models. No dependency on int88 or any other external custom node — all quantization logic is built in.
-🔥 WINT8 Diffuser Loader
+
+WINT8 Diffuser Loader
 Loads INT8 quantized diffusion models with full control over the quantization pipeline.
 Features:
 
@@ -14,7 +13,7 @@ On-the-fly quantization — quantize fp16/bf16 checkpoints to INT8 at load time 
 Model type presets — dedicated exclusion lists for flux2, z-image, chroma, wan, ltx2, qwen, ernie, hidream ensuring the right layers stay in full precision
 
 Supported models: Flux2, Z-Image Turbo, Chroma, WAN, LTX2, Qwen, Ernie, HiDream, and any INT8 pre-quantized diffusion model
-🔥 WINT8 Power LoRA Loader
+WINT8 Power LoRA Loader
 Multi-LoRA loader adapted for INT8 quantized models. Uses a dynamic forward hook instead of the standard ComfyUI weight patching path, so LoRAs apply correctly without needing to dequantize and re-quantize the entire model.
 
 Same powerful multi-row UI as the Winnougan Power LoRA Loader
@@ -27,32 +26,8 @@ Passes CLIP through unchanged
 
 Self-Contained Architecture
 The WINT8 suite ships everything it needs internally:
-FilePurposewint8_quant.pyInt8TensorwiseOps + DynamicLoRAHookwint8_blockwise.pyInt8BlockwiseOps with 2D tile scalingwint8_fused_kernel.pyTriton fused INT8 kernels with torch._int_mm fallbackwint8_quarot.pyHadamard rotation (scipy optional, pure-torch fallback)
-Triton kernels are used automatically when available and fall back to torch._int_mm gracefully. QuaRot falls back to pure PyTorch if scipy is not installed.
-
-```
-ComfyUI/custom_nodes/
-├── winnougan_nodes/
-│   ├── __init__.py
-│   ├── winnougan_prompt_encoder.py
-│   ├── winnougan_clip_loader.py
-│   ├── winnougan_power_lora_loader.py
-│   └── js/
-│       ├── winnougan_prompt_encoder.js
-│       ├── winnougan_clip_loader.js
-│       └── winnougan_power_lora_loader.js
-└── wint8_nodes/
-    ├── __init__.py
-    ├── wint8_diffuser_loader.py
-    ├── wint8_power_lora_loader.py
-    ├── wint8_quant.py
-    ├── wint8_blockwise.py
-    ├── wint8_fused_kernel.py
-    ├── wint8_quarot.py
-    └── js/
-        ├── wint8_diffuser_loader.js
-        └── wint8_power_lora_loader.js
-```
+FilePurposewint8_quant.pyInt8TensorwiseOps + DynamicLoRAHookwint8_blockwise.pyInt8BlockwiseOps with 2D tile scalingwint8_fused_kernel.pyTriton fused INT8 kernels with `torch._int_mm fallbackwint8_quarot.pyHadamard` rotation (scipy optional, pure-torch fallback)
+Triton kernels are used automatically when available and fall back to `torch._int_mm` gracefully. QuaRot falls back to pure PyTorch if scipy is not installed.
 
 Requirements
 - ComfyUI (latest)
@@ -61,6 +36,3 @@ Requirements
 - `scipy` (optional, for optimized Hadamard matrices)
 - `sageattn` (optional, for Sage Attention in WINT8 Diffuser Loader)
 - ComfyUI-GGUF (optional, for GGUF CLIP loading in Winnougan CLIP Loader)
-
-[![Support on Patreon](https://img.shields.io/badge/Patreon-Support%20Winnougan-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/c/u5867556)
-[![Support on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Winnougan-FF5E5B?style=for-the-badge&logo=kofi&logoColor=white)](https://ko-fi.com/Winnougan)

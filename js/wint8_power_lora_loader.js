@@ -3,92 +3,6 @@ import { api } from "../../scripts/api.js";
 
 const NODE_TYPE = "WINT8PowerLoraLoader";
 
-// ── Sparkle system ────────────────────────────────────────────────────────────
-class SparkleSystem {
-    constructor(maxParticles = 14) {
-        this.particles = [];
-        this.max = maxParticles;
-    }
-    _spawn(w, h, yOff) {
-        const perim = 2 * (w + h);
-        let d = Math.random() * perim;
-        let x, y;
-        if (d < w)              { x = d;               y = yOff; }
-        else if (d < w + h)     { x = w;                y = yOff + (d - w); }
-        else if (d < 2 * w + h) { x = w - (d - w - h);  y = yOff + h; }
-        else                    { x = 0;                y = yOff + h - (d - 2 * w - h); }
-        this.particles.push({
-            x, y,
-            vx: (Math.random() - 0.5) * 0.6,
-            vy: (Math.random() - 0.5) * 0.6,
-            life: 1.0,
-            decay: 0.008 + Math.random() * 0.012,
-            size: 1.2 + Math.random() * 2.0,
-        });
-    }
-    update(w, h, yOff) {
-        while (this.particles.length < this.max) this._spawn(w, h, yOff);
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= p.decay;
-            if (p.life <= 0) this.particles.splice(i, 1);
-        }
-    }
-    draw(ctx) {
-        for (const p of this.particles) {
-            ctx.save();
-            ctx.globalAlpha = p.life * 0.9;
-            ctx.shadowColor = "#ffcc66"; ctx.shadowBlur = 6 + p.size * 2;
-            ctx.fillStyle = "#ffe0a0";
-            const s = p.size;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x + s*0.3, p.y);
-            ctx.lineTo(p.x, p.y + s); ctx.lineTo(p.x - s*0.3, p.y);
-            ctx.closePath(); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(p.x - s, p.y); ctx.lineTo(p.x, p.y + s*0.3);
-            ctx.lineTo(p.x + s, p.y); ctx.lineTo(p.x, p.y - s*0.3);
-            ctx.closePath(); ctx.fill();
-            ctx.restore();
-        }
-    }
-}
-
-// ── Enhanced breathing glow with sparkles ─────────────────────────────────────
-function drawEnhancedGlow(ctx, node, sparkles) {
-    if (node.flags?.collapsed) return;
-    const w = node.size[0], h = node.size[1] + LiteGraph.NODE_TITLE_HEIGHT;
-    const yOff = -LiteGraph.NODE_TITLE_HEIGHT, r = 8;
-    const t = Date.now() / 1000;
-    const pulse = 0.5 + 0.5 * Math.sin(t * (2 * Math.PI / 3));
-    const pulse2 = 0.5 + 0.5 * Math.sin(t * (2 * Math.PI / 5) + 1.0);
-    app.graph.setDirtyCanvas(true, false);
-    ctx.save();
-    ctx.shadowColor = "#cc8800"; ctx.shadowBlur = 28 + pulse * 30;
-    ctx.strokeStyle = "#cc8800"; ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.12 + pulse * 0.15;
-    ctx.beginPath(); ctx.roundRect(-2, yOff-2, w+4, h+4, r+2); ctx.stroke();
-    ctx.shadowColor = "#f5a623"; ctx.shadowBlur = 18 + pulse * 22;
-    ctx.strokeStyle = "#f5a623"; ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.30 + pulse * 0.40;
-    ctx.beginPath(); ctx.roundRect(0, yOff, w, h, r); ctx.stroke();
-    ctx.shadowBlur = 8 + pulse2 * 10; ctx.globalAlpha = 0.55 + pulse2 * 0.35;
-    ctx.lineWidth = 1.5; ctx.strokeStyle = "#ffd080";
-    ctx.beginPath(); ctx.roundRect(1, yOff+1, w-2, h-2, r); ctx.stroke();
-    ctx.shadowColor = "#ffe0a0"; ctx.shadowBlur = 8;
-    ctx.globalAlpha = 0.3 + pulse * 0.5; ctx.fillStyle = "#ffe0a0";
-    const dotR = 2 + pulse * 1.5;
-    for (const [cx, cy] of [[2,yOff+2],[w-2,yOff+2],[2,yOff+h-2],[w-2,yOff+h-2]]) {
-        ctx.beginPath(); ctx.arc(cx, cy, dotR, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-    sparkles.update(w, h, yOff);
-    sparkles.draw(ctx);
-}
-
-
-const NODE_TITLE = "WINT8 Power LoRA Loader";
-
 const PROP_SHOW_STRENGTHS = "Show Strengths";
 const PROP_VALUE_SINGLE = "Single Strength";
 const PROP_VALUE_SEPARATE = "Separate Model & Clip";
@@ -648,7 +562,6 @@ app.registerExtension({
       this.color   = "#2a1a00";
       this.title   = "🔥 WINT8 Power LoRA Loader";
       this.bgcolor = "#1a1000";
-            this._sparkles = new SparkleSystem(14);
       this._loraCounter = 0;
       this.serialize_widgets = true;
       this.properties ??= {};
@@ -764,43 +677,6 @@ app.registerExtension({
     };
 
 
-        // ── Enhanced glow + sparkles ──────────────────────────────────────────
-    const origOnDrawBackground = nodeType.prototype.onDrawBackground;
-    nodeType.prototype.onDrawBackground = function (ctx) {
-        origOnDrawBackground?.call(this, ctx);
-        if (!this._sparkles) this._sparkles = new SparkleSystem(14);
-        drawEnhancedGlow(ctx, this, this._sparkles);
-
-        // ── Manually draw all widgets with zero inter-row gap ─────────────
-        this._manualDraw = true;
-        // Because computeSize() returns 0, LiteGraph's own widget loop draws
-        // nothing. We take full control here.
-        if (!this.widgets?.length) return;
-        const W   = this.size[0];
-        const TH  = LiteGraph.NODE_TITLE_HEIGHT;
-        // Start Y: below the input/output slot rows
-        const slotH = LiteGraph.NODE_SLOT_HEIGHT ?? 20;
-        const nSlots = Math.max(
-            (this.inputs?.length ?? 0),
-            (this.outputs?.length ?? 0)
-        );
-        let y = slotH * nSlots + 6;
-
-        for (const widget of this.widgets) {
-            if (widget.hidden) continue;
-            const isLora   = widget.name?.startsWith("lora_");
-            const isToggle = widget.name === "__global_toggle__";
-            const rowH     = isLora ? ROW_HEIGHT : (isToggle ? 18 : 18);
-            const gap      = isToggle ? 2 : 0; // tiny gap after header only
-            widget.last_y  = y;
-            if (widget.draw) widget.draw(ctx, this, W, y, rowH);
-            y += rowH + gap;
-        }
-        // Store the bottom of the last widget for the Add Lora button
-        this._widgetsBottomY = y;
-        this._manualDraw = false;
-    };
-
     // ── Draw foreground ───────────────────────────────────────────────────────
     // LiteGraph already calls draw() on custom widgets automatically.
     // onDrawForeground is only used here for the "Add Lora" button overlay.
@@ -813,7 +689,7 @@ app.registerExtension({
       ctx.fillStyle = "#f5a623"; ctx.shadowColor = "#f5a623";
       const _t = Date.now()/1000;
       ctx.shadowBlur = 6 + (0.5 + 0.5*Math.sin(_t*(2*Math.PI/3))) * 4;
-      ctx.fillText("⚡ WINT8", this.size[0] - 76, 14);
+      ctx.fillText("WINT8", this.size[0] - 76, 14);
       ctx.restore();
 
       // ── "Add Lora" button at the bottom ───────────────────────────────────
